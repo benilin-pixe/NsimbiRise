@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Clock, CheckCircle2, ShieldCheck, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
+import { TrendingUp, Clock, CheckCircle2, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, addDoc, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { UserProfile, Wallet, Investment } from '../types';
@@ -28,7 +28,8 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({ user }) => {
       const snap = await getDocs(q);
       setInvestments(snap.docs.map(d => ({ id: d.id, ...d.data() } as Investment)));
     } catch (err) {
-      handleFirestoreError(err, OperationType.GET, 'investments');
+      console.error('Failed to load investments:', err);
+      setError('Unable to load investment records right now.');
     } finally {
       setLoading(false);
     }
@@ -57,7 +58,7 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({ user }) => {
     setActionLoading(true);
     try {
       const now = new Date();
-      const maturityDate = new Date(now.getTime() + 48 * 60 * 60 * 1000); // 48 hours
+      const maturityDate = new Date(now.getTime() + 24 * 60 * 60 * 1000); // Daily (24 hours)
       const expectedReturn = Math.round(principal * 1.08); // 8% illustrative return
 
       // 1. Create investment document
@@ -67,7 +68,7 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({ user }) => {
         principalUgx: Number(principal),
         expectedReturnUgx: expectedReturn,
         returnRate: 0.08,
-        maturityHours: 48,
+        maturityHours: 24,
         status: 'active',
         startDate: now.toISOString(),
         maturityDate: maturityDate.toISOString(),
@@ -85,10 +86,10 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({ user }) => {
         updatedAt: now.toISOString(),
       });
 
-      setSuccessMsg(`Successfully deployed UGX ${principal.toLocaleString()} into a 48-hour investment cycle!`);
+      setSuccessMsg(`Successfully deployed UGX ${principal.toLocaleString()} into a daily (24-hour) investment cycle!`);
       await fetchData();
     } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, 'investments');
+      console.error('Create investment error:', err);
       setError('Failed to create investment. Please try again.');
     } finally {
       setActionLoading(false);
@@ -118,10 +119,10 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({ user }) => {
         updatedAt: now.toISOString(),
       });
 
-      setSuccessMsg(`Claimed UGX ${inv.expectedReturnUgx.toLocaleString()} to your wallet!`);
+      setSuccessMsg(`Claimed UGX ${inv.expectedReturnUgx.toLocaleString()} to your Nsimbi Rise wallet!`);
       await fetchData();
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `investments/${inv.id}`);
+      console.error('Claim matured investment error:', err);
       setError('Failed to claim matured investment.');
     } finally {
       setActionLoading(false);
@@ -145,19 +146,19 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({ user }) => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-3">
-              <TrendingUp className="w-4 h-4" /> 48-Hour Investment Cycles
+            <div className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5 mb-2">
+              <TrendingUp className="w-4 h-4" /> Nsimbi Rise · Daily Investment Cycles
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
               Investment Management
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Deploy your capital starting from UGX 5,000. Target 8% illustrative return over 48 hours.
+              Deploy your capital starting from UGX 5,000. Target 8% illustrative return with daily (24-hour) maturity.
             </p>
           </div>
           <div className="bg-slate-950 border border-slate-800 rounded-2xl px-5 py-3 text-right">
             <span className="text-[10px] uppercase tracking-wider text-slate-400 block">Available Balance</span>
-            <span className="text-lg font-mono font-bold text-emerald-400">UGX {walletBalance.toLocaleString()}</span>
+            <span className="text-lg font-mono tabular-nums font-bold text-emerald-400">UGX {walletBalance.toLocaleString()}</span>
           </div>
         </div>
 
@@ -180,9 +181,9 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({ user }) => {
           {/* New Investment Form */}
           <div className="lg:col-span-5">
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
-              <h3 className="text-lg font-bold text-white">Deploy New Investment</h3>
+              <h3 className="text-lg font-bold text-white">Deploy New Daily Investment</h3>
               <p className="text-xs text-slate-400">
-                Minimum principal amount is UGX 5,000. Maturity period is exactly 48 hours with 8% illustrative return.
+                Minimum principal amount is UGX 5,000. Standard maturity period is daily (24 hours) with an 8% illustrative return.
               </p>
 
               <form onSubmit={handleCreateInvestment} className="space-y-6">
@@ -197,7 +198,7 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({ user }) => {
                     required
                     value={principal}
                     onChange={(e) => setPrincipal(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-mono text-lg focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-mono tabular-nums text-lg focus:outline-none focus:border-emerald-500"
                   />
                   <div className="flex gap-2 mt-2">
                     {[10000, 50000, 200000, 1000000].map((val) => (
@@ -216,7 +217,7 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({ user }) => {
                 <div className="bg-slate-950 rounded-2xl p-4 border border-slate-800 space-y-2.5 text-xs">
                   <div className="flex justify-between text-slate-400">
                     <span>Maturity Duration</span>
-                    <span className="font-mono text-white">48 Hours</span>
+                    <span className="font-mono text-white">Daily (24 Hours)</span>
                   </div>
                   <div className="flex justify-between text-slate-400">
                     <span>Illustrative Return Rate</span>
@@ -224,7 +225,7 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({ user }) => {
                   </div>
                   <div className="flex justify-between text-slate-400 pt-2 border-t border-slate-900 font-bold text-white">
                     <span>Expected Payout</span>
-                    <span className="font-mono text-emerald-400 text-sm">UGX {Math.round(principal * 1.08).toLocaleString()}</span>
+                    <span className="font-mono tabular-nums text-emerald-400 text-sm">UGX {Math.round(principal * 1.08).toLocaleString()}</span>
                   </div>
                 </div>
 
@@ -233,7 +234,7 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({ user }) => {
                   disabled={actionLoading}
                   className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 text-sm flex items-center justify-center gap-2"
                 >
-                  {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Deploy Investment Cycle <ArrowRight className="w-4 h-4" /></>}
+                  {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Deploy Daily Cycle <ArrowRight className="w-4 h-4" /></>}
                 </button>
               </form>
             </div>
@@ -246,7 +247,7 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({ user }) => {
 
               {investments.length === 0 ? (
                 <p className="text-xs text-slate-500 py-12 text-center">
-                  No investments deployed yet. Use the form on the left to start your first 48-hour cycle.
+                  No investments deployed yet. Use the form on the left to start your first daily (24-hour) cycle.
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -258,14 +259,14 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({ user }) => {
                       <div key={inv.id} className="p-5 bg-slate-950 rounded-2xl border border-slate-800/80 space-y-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <span className="text-xs text-slate-400">Principal: <strong className="font-mono text-white">UGX {inv.principalUgx.toLocaleString()}</strong></span>
-                            <div className="text-[10px] text-slate-500 mt-0.5">Started: {new Date(inv.startDate).toLocaleString()}</div>
+                            <span className="text-xs text-slate-400">Principal: <strong className="font-mono tabular-nums text-white">UGX {Number(inv.principalUgx ?? 0).toLocaleString()}</strong></span>
+                            <div className="text-[10px] text-slate-500 mt-0.5">Started: {inv.startDate ? new Date(inv.startDate).toLocaleString() : '—'} · {inv.maturityHours || 24}h Cycle</div>
                           </div>
                           <div>
-                            <span className={`text-[10px] uppercase tracking-wider px-3 py-1 rounded-full font-bold ${
-                              status === 'active' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                              status === 'matured' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                              'bg-slate-800 text-slate-400'
+                            <span className={`text-[10px] uppercase tracking-wider font-mono font-bold ${
+                              status === 'active' ? 'text-amber-400' :
+                              status === 'matured' ? 'text-emerald-400' :
+                              'text-slate-400'
                             }`}>
                               {status}
                             </span>
@@ -275,16 +276,16 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({ user }) => {
                         <div className="flex items-center justify-between pt-3 border-t border-slate-900">
                           <div>
                             <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Expected Return (8%)</span>
-                            <span className="font-mono text-sm font-bold text-emerald-400">UGX {inv.expectedReturnUgx.toLocaleString()}</span>
+                            <span className="font-mono tabular-nums text-sm font-bold text-emerald-400">UGX {Number(inv.expectedReturnUgx ?? 0).toLocaleString()}</span>
                           </div>
                           <div>
                             <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Maturity Time</span>
-                            <span className="font-mono text-xs text-slate-300">{new Date(inv.maturityDate).toLocaleString()}</span>
+                            <span className="font-mono tabular-nums text-xs text-slate-300">{new Date(inv.maturityDate).toLocaleString()}</span>
                           </div>
                           <div>
                             {status === 'active' && (
                               <div className="text-[11px] text-amber-400 font-mono flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5 animate-pulse" /> In Progress
+                                <Clock className="w-3.5 h-3.5" /> In Progress
                               </div>
                             )}
                             {status === 'matured' && (
@@ -298,7 +299,7 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({ user }) => {
                             )}
                             {status === 'withdrawn' && (
                               <div className="text-[11px] text-slate-500 font-mono">
-                                Claimed & Credited
+                                Claimed &amp; Credited
                               </div>
                             )}
                           </div>

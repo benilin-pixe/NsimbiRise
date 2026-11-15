@@ -248,7 +248,7 @@ export const DepositModal: React.FC<DepositModalProps> = ({ user, wallet, onClos
             <div>
               <h4 className="text-xl font-bold text-white mb-1">Deposit Successful!</h4>
               <p className="text-xs text-slate-300">
-                UGX {amount.toLocaleString()} has been credited to your NsimbiRise wallet.
+                UGX {amount.toLocaleString()} has been credited to your Nsimbi Rise wallet.
               </p>
             </div>
           </div>

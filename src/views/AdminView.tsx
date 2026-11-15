@@ -22,6 +22,7 @@ import {
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, getDocs, doc, updateDoc, addDoc, query, orderBy } from 'firebase/firestore';
 import { UserProfile, Withdrawal, Investment, AuditLog, Deposit } from '../types';
+import { BrandLogo } from '../components/BrandLogo';
 
 interface AdminViewProps {
   user: UserProfile | null;
@@ -200,16 +201,19 @@ export const AdminView: React.FC<AdminViewProps> = ({ user, onLockSession }) => 
         
         {/* Admin Command Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-900 border border-amber-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold">
-              <Lock className="w-3.5 h-3.5" /> Operations Command Center · Root Security
+          <div className="flex items-start gap-4">
+            <BrandLogo size="lg" className="hidden sm:flex mt-1" />
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold">
+                <Lock className="w-3.5 h-3.5" /> Operations Command Center · Root Security
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Nsimbi Rise Operations Command
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-400">
+                Active Console Session: <span className="text-white font-mono">{adminEmail}</span> · Clearance: <span className="text-emerald-400 font-mono">Super Administrator</span>
+              </p>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              NsimbiRise Operations Command
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-400">
-              Active Console Session: <span className="text-white font-mono">{adminEmail}</span> · Clearance: <span className="text-emerald-400 font-mono">Super Administrator</span>
-            </p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -258,7 +262,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ user, onLockSession }) => 
               <TrendingUp className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="text-xl font-bold font-mono text-emerald-400">UGX {(totalInvestmentVolume / 1000).toFixed(0)}k</div>
-            <div className="text-[10px] text-slate-500 mt-1">48-Hour Active Cycles</div>
+            <div className="text-[10px] text-slate-500 mt-1">Daily (24h) Active Cycles</div>
           </div>
 
           <div className="bg-slate-900 border border-slate-800/90 rounded-2xl p-4">
@@ -558,7 +562,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ user, onLockSession }) => 
         {activeTab === 'investments' && (
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-amber-400" /> Active & Matured 48-Hour Investment Portfolio
+              <TrendingUp className="w-5 h-5 text-amber-400" /> Active & Matured Daily Investment Portfolio
             </h3>
             
             {investmentsList.length === 0 ? (
@@ -595,7 +599,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ user, onLockSession }) => 
                           <span className="text-emerald-400 font-bold">UGX {inv.expectedReturnUgx?.toLocaleString()}</span>
                         </div>
                         <div className="text-right">
-                          <span className="text-[10px] text-slate-500 uppercase block">Maturity Target</span>
+                          <span className="text-[10px] text-slate-500 uppercase block">{inv.maturityHours || 24}h Maturity Target</span>
                           <span className="text-slate-300 text-[11px]">{new Date(inv.maturityDate).toLocaleTimeString()}</span>
                         </div>
                       </div>

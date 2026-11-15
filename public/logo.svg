@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+  <defs>
+    <linearGradient id="bgNavy" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0B1B36" />
+      <stop offset="100%" stop-color="#060E1F" />
+    </linearGradient>
+    <linearGradient id="sunGrad" x1="278" y1="138" x2="278" y2="262" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="55%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#EA580C" />
+    </linearGradient>
+    <linearGradient id="peakGrad" x1="220" y1="210" x2="310" y2="305" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22D3EE" />
+      <stop offset="60%" stop-color="#0284C7" />
+      <stop offset="100%" stop-color="#1E3A8A" />
+    </linearGradient>
+    <linearGradient id="nFlowGrad" x1="120" y1="150" x2="395" y2="230" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22D3EE" />
+      <stop offset="48%" stop-color="#2563EB" />
+      <stop offset="76%" stop-color="#06B6D4" />
+      <stop offset="92%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#FDE047" />
+    </linearGradient>
+    <linearGradient id="arrowHeadGrad" x1="330" y1="150" x2="405" y2="235" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="55%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bgNavy)" />
+
+  <!-- Rising Sun -->
+  <circle cx="276" cy="202" r="56" fill="url(#sunGrad)" />
+
+  <!-- Mountain Peaks inside the N -->
+  <path d="M214 256L252 214L276 240L302 206L342 252L278 310L214 256Z" fill="url(#peakGrad)" />
+  <path d="M252 214L276 240L262 258L240 236L252 214Z" fill="#67E8F9" fill-opacity="0.65" />
+  <path d="M302 206L328 236L310 258L288 232L302 206Z" fill="#67E8F9" fill-opacity="0.55" />
+
+  <!-- Geometric N with Upward Surge -->
+  <path d="M126 364V164C126 155 136 150 143 156L278 308L354 218L378 240L292 346C285 354 272 354 265 346L164 232V364H126Z" fill="url(#nFlowGrad)" />
+
+  <!-- Golden Arrowhead -->
+  <path d="M324 198L398 158L394 242L368 220L354 234L338 218L324 198Z" fill="url(#arrowHeadGrad)" />
+</svg>

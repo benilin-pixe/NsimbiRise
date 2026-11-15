@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Lock, Shield, Eye, EyeOff, AlertCircle, CheckCircle2, ArrowRight, X } from 'lucide-react';
+import { Lock, Shield, Eye, EyeOff, AlertCircle, ArrowRight, X } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, setDoc, addDoc, collection } from 'firebase/firestore';
 import { UserProfile } from '../types';
+import { BrandLogo } from './BrandLogo';
 
 interface AdminGateModalProps {
   isOpen: boolean;
@@ -35,7 +36,11 @@ export const AdminGateModal: React.FC<AdminGateModalProps> = ({
     // Crucial: The password ATIM is validated here and is strictly never printed or visible to users in UI
     if (entered.toUpperCase() === 'ATIM') {
       try {
-        sessionStorage.setItem('nsimbi_admin_session', 'authenticated');
+        try {
+          window.sessionStorage.setItem('nsimbi_admin_session', 'authenticated');
+        } catch {
+          // Ignore storage restrictions in embedded contexts
+        }
 
         // If user is currently signed in, register in Firestore admins collection to ensure full rules clearance
         if (currentUser?.uid) {
@@ -93,11 +98,9 @@ export const AdminGateModal: React.FC<AdminGateModalProps> = ({
         </button>
 
         <div className="text-center space-y-2">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto shadow-lg shadow-amber-500/10">
-            <Lock className="w-7 h-7" />
-          </div>
+          <BrandLogo size="lg" className="mx-auto" />
           <h3 className="text-2xl font-extrabold text-white tracking-tight">
-            Operations Command Access
+            Nsimbi Rise Operations Command
           </h3>
           <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
             Restricted administrative gateway. Enter the master operations passcode to unlock administrative privileges.

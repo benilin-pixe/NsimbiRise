@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
+  <defs>
+    <linearGradient id="fNavy" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0B1B36" />
+      <stop offset="100%" stop-color="#060E1F" />
+    </linearGradient>
+    <linearGradient id="fSun" x1="35" y1="14" x2="35" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="100%" stop-color="#EA580C" />
+    </linearGradient>
+    <linearGradient id="fN" x1="12" y1="16" x2="52" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22D3EE" />
+      <stop offset="55%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#fNavy)" />
+  <circle cx="35" cy="24" r="8" fill="url(#fSun)" />
+  <path d="M25 32L31 25L35 29L39 24L45 31L35 40L25 32Z" fill="#06B6D4" />
+  <path d="M13 48V18C13 16.5 14.8 15.8 15.8 16.8L35 38.5L46 25.5L50 29L37 45C35.8 46.4 33.8 46.4 32.6 45L19 29.5V48H13Z" fill="url(#fN)" />
+  <path d="M41 23L53 17L52 30L48 26.5L41 23Z" fill="#FACC15" />
+</svg>

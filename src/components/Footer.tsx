@@ -1,5 +1,6 @@
 import React from 'react';
 import { ShieldAlert, Lock, CheckCircle2 } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 interface FooterProps {
   onOpenAdminGate?: () => void;
@@ -21,10 +22,10 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdminGate }) => {
                 Important Regulatory & Investment Risk Disclosure
               </h4>
               <p className="text-xs leading-relaxed text-slate-300">
-                NsimbiRise operates as a secure Ugandan savings and investment management platform. 
-                The <strong>8% return rate</strong> is an illustrative, non-guaranteed return assumption calculated over a standard <strong>48-hour maturity period</strong>. 
+                Nsimbi Rise operates as a secure Ugandan savings and investment management platform. 
+                The <strong>8% return rate</strong> is an illustrative, non-guaranteed return assumption calculated over a standard <strong>daily (24-hour) maturity period</strong>. 
                 All Mobile Money transactions (MTN and Airtel) are processed with strict server-side verification and atomic safety guarantees. 
-                Withdrawals are subject to a transparently disclosed <strong>10% processing and network fee</strong>. 
+                Withdrawals are available daily between <strong>7:00 AM and 6:00 PM (EAT)</strong> and are subject to a transparently disclosed <strong>10% processing and network fee</strong>. 
                 Past performance or illustrative return assumptions do not guarantee future financial yields. Please invest responsibly.
               </p>
             </div>
@@ -33,16 +34,14 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdminGate }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white font-bold text-lg">
-                ₦
-              </div>
+            <div className="flex items-center gap-2.5 mb-4">
+              <BrandLogo size="sm" />
               <span className="text-lg font-bold text-white tracking-tight">
-                Nsimbi<span className="text-emerald-400">Rise</span>
+                Nsimbi <span className="bg-gradient-to-r from-cyan-400 via-amber-400 to-yellow-300 bg-clip-text text-transparent">Rise</span>
               </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed mb-4">
-              Empowering Ugandans to make every shilling count through disciplined savings, transparent 48-hour investment cycles, and seamless mobile money infrastructure.
+              Empowering Ugandans to make every shilling count through disciplined savings, transparent daily investment cycles, and seamless mobile money infrastructure.
             </p>
             <div className="flex items-center gap-3 text-xs text-emerald-400 font-mono">
               <CheckCircle2 className="w-4 h-4" /> Bank-Grade Firestore Security
@@ -56,9 +55,9 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdminGate }) => {
             <ul className="space-y-2.5 text-xs text-slate-300">
               <li>MTN & Airtel Mobile Money</li>
               <li>Minimum UGX 5,000 Deposits</li>
-              <li>48-Hour Investment Cycles</li>
+              <li>Daily (24-Hour) Maturity Cycles</li>
               <li>8% Illustrative Yield Target</li>
-              <li>Transparent 10% Withdrawal Fee</li>
+              <li>Withdrawals 7:00 AM – 6:00 PM EAT (10% Fee)</li>
             </ul>
           </div>
 
@@ -80,7 +79,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdminGate }) => {
               Kampala Operations
             </h5>
             <p className="text-xs text-slate-300 mb-2">
-              NsimbiRise Financial Technologies Ltd.<br />
+              Nsimbi Rise Financial Technologies Ltd.<br />
               Nakasero Road, Kampala, Uganda
             </p>
             <p className="text-xs text-emerald-400 font-mono">
@@ -90,7 +89,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdminGate }) => {
         </div>
 
         <div className="border-t border-slate-900 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} NsimbiRise Technologies. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Nsimbi Rise Technologies. All rights reserved.</p>
           <div className="flex items-center gap-6 mt-4 sm:mt-0">
             <span>Make Every Shilling Count</span>
             <span>·</span>

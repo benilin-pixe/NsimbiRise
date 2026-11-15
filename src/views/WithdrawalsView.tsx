@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowUpRight, ShieldCheck, Smartphone, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowUpRight, CheckCircle2, AlertCircle, Loader2, Clock } from 'lucide-react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, addDoc, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { UserProfile, Wallet, Withdrawal } from '../types';
+import { getWithdrawalWindowStatus, WithdrawalWindowStatus } from '../utils/timeWindow';
 
 interface WithdrawalsViewProps {
   user: UserProfile;
@@ -18,6 +19,14 @@ export const WithdrawalsView: React.FC<WithdrawalsViewProps> = ({ user }) => {
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [windowStatus, setWindowStatus] = useState<WithdrawalWindowStatus>(() => getWithdrawalWindowStatus());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setWindowStatus(getWithdrawalWindowStatus());
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -30,7 +39,8 @@ export const WithdrawalsView: React.FC<WithdrawalsViewProps> = ({ user }) => {
       const snap = await getDocs(q);
       setWithdrawals(snap.docs.map(d => ({ id: d.id, ...d.data() } as Withdrawal)));
     } catch (err) {
-      handleFirestoreError(err, OperationType.GET, 'withdrawals');
+      console.error('Failed to load withdrawals:', err);
+      setError('Unable to load withdrawal records right now.');
     } finally {
       setLoading(false);
     }
@@ -47,6 +57,15 @@ export const WithdrawalsView: React.FC<WithdrawalsViewProps> = ({ user }) => {
     e.preventDefault();
     setError(null);
     setSuccessMsg(null);
+
+    const liveWindow = getWithdrawalWindowStatus();
+    setWindowStatus(liveWindow);
+    if (!liveWindow.isOpen) {
+      setError(
+        `Withdrawals are only available daily between 7:00 AM and 6:00 PM EAT (current Kampala time: ${liveWindow.kampalaTimeFormatted}).`
+      );
+      return;
+    }
 
     if (amount < 5000) {
       setError('Minimum withdrawal amount is UGX 5,000.');
@@ -92,7 +111,7 @@ export const WithdrawalsView: React.FC<WithdrawalsViewProps> = ({ user }) => {
       setAmount(20000);
       await fetchData();
     } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, 'withdrawals');
+      console.error('Withdrawal request error:', err);
       setError('Failed to submit withdrawal request.');
     } finally {
       setActionLoading(false);
@@ -116,19 +135,38 @@ export const WithdrawalsView: React.FC<WithdrawalsViewProps> = ({ user }) => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-3">
-              <ArrowUpRight className="w-4 h-4" /> Mobile Money Payouts
+            <div className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5 mb-2">
+              <ArrowUpRight className="w-4 h-4" /> Nsimbi Rise · Mobile Money Payouts
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
               Withdrawal Management
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Request instant Mobile Money payouts with a transparently disclosed 10% processing fee.
+              Withdrawals are open daily between <strong>7:00 AM and 6:00 PM EAT</strong> with a transparently disclosed 10% processing fee.
             </p>
           </div>
           <div className="bg-slate-950 border border-slate-800 rounded-2xl px-5 py-3 text-right">
             <span className="text-[10px] uppercase tracking-wider text-slate-400 block">Available Balance</span>
-            <span className="text-lg font-mono font-bold text-emerald-400">UGX {walletBalance.toLocaleString()}</span>
+            <span className="text-lg font-mono tabular-nums font-bold text-emerald-400">UGX {walletBalance.toLocaleString()}</span>
+          </div>
+        </div>
+
+        {/* Daily Payout Window Banner */}
+        <div className={`p-4 rounded-2xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+          windowStatus.isOpen
+            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+            : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            <Clock className="w-4 h-4 shrink-0" />
+            <span>
+              {windowStatus.isOpen
+                ? 'Withdrawal Window Open — Payout requests are active until 6:00 PM EAT.'
+                : 'Withdrawal Window Closed — Withdrawals are accepted daily between 7:00 AM and 6:00 PM EAT.'}
+            </span>
+          </div>
+          <div className="font-mono text-[11px] opacity-90 whitespace-nowrap">
+            Kampala Time (EAT): {windowStatus.kampalaTimeFormatted}
           </div>
         </div>
 
@@ -153,7 +191,7 @@ export const WithdrawalsView: React.FC<WithdrawalsViewProps> = ({ user }) => {
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
               <h3 className="text-lg font-bold text-white">Request Payout</h3>
               <p className="text-xs text-slate-400">
-                Transparent 10% fee applies to all withdrawal requests. Payouts are verified and processed securely.
+                Available daily 7:00 AM – 6:00 PM EAT. Transparent 10% fee applies to all withdrawal requests.
               </p>
 
               <form onSubmit={handleWithdrawalRequest} className="space-y-6">
@@ -212,31 +250,37 @@ export const WithdrawalsView: React.FC<WithdrawalsViewProps> = ({ user }) => {
                     required
                     value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-mono text-lg focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-mono tabular-nums text-lg focus:outline-none focus:border-emerald-500"
                   />
                 </div>
 
                 <div className="bg-slate-950 rounded-2xl p-4 border border-slate-800 space-y-2.5 text-xs">
                   <div className="flex justify-between text-slate-400">
                     <span>Requested Amount</span>
-                    <span className="font-mono text-white">UGX {amount.toLocaleString()}</span>
+                    <span className="font-mono tabular-nums text-white">UGX {amount.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-slate-400">
                     <span>Processing Fee (10%)</span>
-                    <span className="font-mono text-red-400">- UGX {feeUgx.toLocaleString()}</span>
+                    <span className="font-mono tabular-nums text-red-400">- UGX {feeUgx.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-slate-400 pt-2 border-t border-slate-900 font-bold text-white">
                     <span>Net Payout to Mobile Money</span>
-                    <span className="font-mono text-emerald-400 text-sm">UGX {netAmountUgx.toLocaleString()}</span>
+                    <span className="font-mono tabular-nums text-emerald-400 text-sm">UGX {netAmountUgx.toLocaleString()}</span>
                   </div>
                 </div>
 
                 <button
                   type="submit"
-                  disabled={actionLoading}
-                  className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 text-sm flex items-center justify-center gap-2"
+                  disabled={actionLoading || !windowStatus.isOpen}
+                  className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 text-sm flex items-center justify-center gap-2"
                 >
-                  {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Request Withdrawal <ArrowUpRight className="w-4 h-4" /></>}
+                  {actionLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : !windowStatus.isOpen ? (
+                    <>Withdrawals Open 7:00 AM – 6:00 PM EAT</>
+                  ) : (
+                    <>Request Withdrawal <ArrowUpRight className="w-4 h-4" /></>
+                  )}
                 </button>
               </form>
             </div>
@@ -245,7 +289,7 @@ export const WithdrawalsView: React.FC<WithdrawalsViewProps> = ({ user }) => {
           {/* Withdrawals List */}
           <div className="lg:col-span-7">
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
-              <h3 className="text-lg font-bold text-white">Withdrawal History & Status</h3>
+              <h3 className="text-lg font-bold text-white">Withdrawal History &amp; Status</h3>
 
               {withdrawals.length === 0 ? (
                 <p className="text-xs text-slate-500 py-12 text-center">
@@ -261,11 +305,11 @@ export const WithdrawalsView: React.FC<WithdrawalsViewProps> = ({ user }) => {
                           <div className="text-[10px] text-slate-500 mt-0.5">Ref: {wth.reference} · {new Date(wth.createdAt).toLocaleString()}</div>
                         </div>
                         <div>
-                          <span className={`text-[10px] uppercase tracking-wider px-3 py-1 rounded-full font-bold ${
-                            wth.status === 'pending' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                            wth.status === 'approved' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
-                            wth.status === 'processed' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                            'bg-red-500/10 text-red-400 border border-red-500/20'
+                          <span className={`text-[10px] uppercase tracking-wider font-mono font-bold ${
+                            wth.status === 'pending' ? 'text-amber-400' :
+                            wth.status === 'approved' ? 'text-blue-400' :
+                            wth.status === 'processed' ? 'text-emerald-400' :
+                            'text-red-400'
                           }`}>
                             {wth.status}
                           </span>
@@ -273,9 +317,9 @@ export const WithdrawalsView: React.FC<WithdrawalsViewProps> = ({ user }) => {
                       </div>
 
                       <div className="flex items-center justify-between pt-3 border-t border-slate-900 text-xs">
-                        <span className="text-slate-400">Gross: <strong className="font-mono text-white">UGX {wth.amountUgx.toLocaleString()}</strong></span>
-                        <span className="text-slate-400">Fee (10%): <strong className="font-mono text-red-400">UGX {wth.feeUgx.toLocaleString()}</strong></span>
-                        <span className="text-slate-400">Net Payout: <strong className="font-mono text-emerald-400">UGX {wth.netAmountUgx.toLocaleString()}</strong></span>
+                        <span className="text-slate-400">Gross: <strong className="font-mono tabular-nums text-white">UGX {Number(wth.amountUgx ?? 0).toLocaleString()}</strong></span>
+                        <span className="text-slate-400">Fee (10%): <strong className="font-mono tabular-nums text-red-400">UGX {Number(wth.feeUgx ?? 0).toLocaleString()}</strong></span>
+                        <span className="text-slate-400">Net Payout: <strong className="font-mono tabular-nums text-emerald-400">UGX {Number(wth.netAmountUgx ?? 0).toLocaleString()}</strong></span>
                       </div>
                     </div>
                   ))}

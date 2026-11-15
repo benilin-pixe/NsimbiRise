@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { History, Smartphone, TrendingUp, ArrowUpRight, Loader2 } from 'lucide-react';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { History, Smartphone, TrendingUp, ArrowUpRight, Loader2, AlertCircle } from 'lucide-react';
+import { db } from '../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { UserProfile, Deposit, Investment, Withdrawal } from '../types';
 
@@ -13,21 +13,23 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ user }) => {
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'deposits' | 'investments' | 'withdrawals'>('all');
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const depSnap = await getDocs(query(collection(db, 'deposits'), where('userId', '==', user.uid)));
+        const [depSnap, invSnap, wthSnap] = await Promise.all([
+          getDocs(query(collection(db, 'deposits'), where('userId', '==', user.uid))),
+          getDocs(query(collection(db, 'investments'), where('userId', '==', user.uid))),
+          getDocs(query(collection(db, 'withdrawals'), where('userId', '==', user.uid))),
+        ]);
         setDeposits(depSnap.docs.map(d => ({ id: d.id, ...d.data() } as Deposit)));
-
-        const invSnap = await getDocs(query(collection(db, 'investments'), where('userId', '==', user.uid)));
         setInvestments(invSnap.docs.map(d => ({ id: d.id, ...d.data() } as Investment)));
-
-        const wthSnap = await getDocs(query(collection(db, 'withdrawals'), where('userId', '==', user.uid)));
         setWithdrawals(wthSnap.docs.map(d => ({ id: d.id, ...d.data() } as Withdrawal)));
       } catch (err) {
-        handleFirestoreError(err, OperationType.LIST, 'history');
+        console.error('Failed to load transaction history:', err);
+        setError('Unable to load transaction history right now.');
       } finally {
         setLoading(false);
       }
@@ -50,14 +52,14 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ user }) => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-3">
-              <History className="w-4 h-4" /> Comprehensive Ledger
+            <div className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5 mb-2">
+              <History className="w-4 h-4" /> Nsimbi Rise · Comprehensive Ledger
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
               Transaction History
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Complete audit trail of all Mobile Money deposits, 48-hour investments, and withdrawal payouts.
+              Complete audit trail of all Mobile Money deposits, daily investments, and withdrawal payouts.
             </p>
           </div>
 
@@ -89,6 +91,13 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ user }) => {
           </div>
         </div>
 
+        {error && (
+          <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
         {/* Ledger Content */}
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4">
           
@@ -102,13 +111,13 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ user }) => {
                       <Smartphone className="w-5 h-5" />
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-white font-mono">{d.provider} Deposit - {d.phoneNumber}</div>
-                      <div className="text-[10px] text-slate-400">Ref: {d.reference} · {new Date(d.createdAt).toLocaleString()}</div>
+                      <div className="text-sm font-bold text-white font-mono">{d.provider || 'MoMo'} Deposit - {d.phoneNumber || '—'}</div>
+                      <div className="text-[10px] text-slate-400">Ref: {d.reference || '—'} · {d.createdAt ? new Date(d.createdAt).toLocaleString() : '—'}</div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-mono font-bold text-emerald-400">+ UGX {d.amountUgx.toLocaleString()}</div>
-                    <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-semibold">{d.status}</span>
+                    <div className="text-sm font-mono tabular-nums font-bold text-emerald-400">+ UGX {Number(d.amountUgx ?? 0).toLocaleString()}</div>
+                    <span className="text-[10px] uppercase font-mono text-emerald-400 font-semibold">{d.status || 'completed'}</span>
                   </div>
                 </div>
               ))}
@@ -125,13 +134,13 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ user }) => {
                       <TrendingUp className="w-5 h-5" />
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-white font-mono">48h Cycle Principal: UGX {inv.principalUgx.toLocaleString()}</div>
-                      <div className="text-[10px] text-slate-400">Expected: UGX {inv.expectedReturnUgx.toLocaleString()} · {new Date(inv.startDate).toLocaleString()}</div>
+                      <div className="text-sm font-bold text-white font-mono tabular-nums">{inv.maturityHours || 24}h Cycle Principal: UGX {Number(inv.principalUgx ?? 0).toLocaleString()}</div>
+                      <div className="text-[10px] text-slate-400">Expected: UGX {Number(inv.expectedReturnUgx ?? 0).toLocaleString()} · {inv.startDate ? new Date(inv.startDate).toLocaleString() : '—'}</div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-mono font-bold text-white">UGX {inv.expectedReturnUgx.toLocaleString()}</div>
-                    <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 font-semibold">{inv.status}</span>
+                    <div className="text-sm font-mono tabular-nums font-bold text-white">UGX {Number(inv.expectedReturnUgx ?? 0).toLocaleString()}</div>
+                    <span className="text-[10px] uppercase font-mono text-amber-400 font-semibold">{inv.status || 'active'}</span>
                   </div>
                 </div>
               ))}
@@ -148,13 +157,13 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ user }) => {
                       <ArrowUpRight className="w-5 h-5" />
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-white font-mono">{wth.provider} Payout - {wth.phoneNumber}</div>
-                      <div className="text-[10px] text-slate-400">Fee: UGX {wth.feeUgx.toLocaleString()} (10%) · {new Date(wth.createdAt).toLocaleString()}</div>
+                      <div className="text-sm font-bold text-white font-mono">{wth.provider || 'MoMo'} Payout - {wth.phoneNumber || '—'}</div>
+                      <div className="text-[10px] text-slate-400">Fee: UGX {Number(wth.feeUgx ?? 0).toLocaleString()} (10%) · {wth.createdAt ? new Date(wth.createdAt).toLocaleString() : '—'}</div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-mono font-bold text-red-400">- UGX {wth.netAmountUgx.toLocaleString()}</div>
-                    <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-semibold">{wth.status}</span>
+                    <div className="text-sm font-mono tabular-nums font-bold text-red-400">- UGX {Number(wth.netAmountUgx ?? 0).toLocaleString()}</div>
+                    <span className="text-[10px] uppercase font-mono text-blue-400 font-semibold">{wth.status || 'pending'}</span>
                   </div>
                 </div>
               ))}

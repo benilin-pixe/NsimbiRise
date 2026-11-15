@@ -19,7 +19,25 @@ import { HistoryView } from './views/HistoryView';
 import { TermsView } from './views/TermsView';
 import { AdminView } from './views/AdminView';
 import { AdminGateModal } from './components/AdminGateModal';
+import { BrandLogo } from './components/BrandLogo';
+import { OfflineIndicator } from './components/PWAInstallButton';
 import { Shield, Loader2, X, CheckCircle, ArrowRight, Lock, Mail, User, Phone, KeyRound, AlertCircle } from 'lucide-react';
+
+const safeGetSession = (key: string): string | null => {
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const safeRemoveSession = (key: string) => {
+  try {
+    window.sessionStorage.removeItem(key);
+  } catch {
+    // Ignore storage restrictions in embedded contexts
+  }
+};
 
 export default function App() {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -29,7 +47,7 @@ export default function App() {
   
   // Admin Session Gate State (Password ATIM protected)
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
-    return sessionStorage.getItem('nsimbi_admin_session') === 'authenticated';
+    return safeGetSession('nsimbi_admin_session') === 'authenticated';
   });
   const [showAdminGateModal, setShowAdminGateModal] = useState<boolean>(false);
   
@@ -49,7 +67,7 @@ export default function App() {
       const hash = window.location.hash;
       const path = window.location.pathname;
       if (hash === '#admin' || hash === '#secure-control' || path === '/secure-control') {
-        if (sessionStorage.getItem('nsimbi_admin_session') === 'authenticated') {
+        if (safeGetSession('nsimbi_admin_session') === 'authenticated') {
           setIsAdminAuthenticated(true);
           setCurrentView('admin');
         } else {
@@ -64,36 +82,40 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          const userRef = doc(db, 'users', firebaseUser.uid);
-          const userSnap = await getDoc(userRef);
+      try {
+        if (firebaseUser) {
+          const isDefaultAdmin = firebaseUser.email === 'benilin76@gmail.com';
+          const fallbackUser: UserProfile = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email || '',
+            displayName: firebaseUser.displayName || 'Ugandan Saver',
+            role: isDefaultAdmin ? 'admin' : 'user',
+            phone: firebaseUser.phoneNumber || '',
+            kycVerified: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
 
-          if (userSnap.exists()) {
-            setUser(userSnap.data() as UserProfile);
-          } else {
-            // Bootstrap new user profile if missing
-            const isDefaultAdmin = firebaseUser.email === 'benilin76@gmail.com';
-            const newUser: UserProfile = {
-              uid: firebaseUser.uid,
-              email: firebaseUser.email || '',
-              displayName: firebaseUser.displayName || 'Ugandan Saver',
-              role: isDefaultAdmin ? 'admin' : 'user',
-              phone: firebaseUser.phoneNumber || '',
-              kycVerified: true,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            };
-            await setDoc(userRef, newUser);
-            setUser(newUser);
+          try {
+            const userRef = doc(db, 'users', firebaseUser.uid);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists()) {
+              setUser({ ...fallbackUser, ...(userSnap.data() as Partial<UserProfile>) });
+            } else {
+              await setDoc(userRef, fallbackUser);
+              setUser(fallbackUser);
+            }
+          } catch (err) {
+            console.warn('User profile sync fallback activated:', err);
+            setUser(fallbackUser);
           }
-        } catch (err) {
-          handleFirestoreError(err, OperationType.GET, `users/${firebaseUser.uid}`);
+        } else {
+          setUser(null);
         }
-      } else {
-        setUser(null);
+      } finally {
+        setLoadingAuth(false);
       }
-      setLoadingAuth(false);
     });
 
     return () => unsubscribe();
@@ -235,8 +257,9 @@ export default function App() {
   if (loadingAuth) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4 text-emerald-400">
-        <Loader2 className="w-10 h-10 animate-spin" />
-        <span className="text-xs font-mono text-slate-400">Initializing NsimbiRise Platform...</span>
+        <BrandLogo size="lg" />
+        <Loader2 className="w-8 h-8 animate-spin" />
+        <span className="text-xs font-mono text-slate-400">Initializing Nsimbi Rise Platform...</span>
       </div>
     );
   }
@@ -297,7 +320,7 @@ export default function App() {
             <AdminView
               user={user}
               onLockSession={() => {
-                sessionStorage.removeItem('nsimbi_admin_session');
+                safeRemoveSession('nsimbi_admin_session');
                 setIsAdminAuthenticated(false);
                 setCurrentView('landing');
               }}
@@ -351,12 +374,10 @@ export default function App() {
             </button>
 
             <div className="text-center space-y-2">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-2xl font-bold mx-auto">
-                ₦
-              </div>
+              <BrandLogo size="lg" className="mx-auto" />
               <h3 className="text-2xl font-bold text-white">
-                {authMode === 'login' && 'Sign In to NsimbiRise'}
-                {authMode === 'register' && 'Create Your Account'}
+                {authMode === 'login' && 'Sign In to Nsimbi Rise'}
+                {authMode === 'register' && 'Create Your Nsimbi Rise Account'}
                 {authMode === 'forgot' && 'Reset Password'}
               </h3>
               <p className="text-xs text-slate-400">
@@ -583,13 +604,15 @@ export default function App() {
                 <Shield className="w-4 h-4" /> Firebase Secure Authentication
               </div>
               <p>
-                By signing up or signing in, you agree to NsimbiRise&apos;s terms, 8% return disclosure, and 10% withdrawal fee policy.
+                By signing up or signing in, you agree to Nsimbi Rise&apos;s terms, 8% return disclosure, and 10% withdrawal fee policy.
               </p>
             </div>
 
           </div>
         </div>
       )}
+
+      <OfflineIndicator />
 
     </div>
   );
