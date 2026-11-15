@@ -1,0 +1,6 @@
+{
+  "name": "NsimbiRise - Ugandan Savings & Investment Platform",
+  "description": "Make Every Shilling Count. Secure Ugandan savings, investments with 8% illustrative returns, and mobile money integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

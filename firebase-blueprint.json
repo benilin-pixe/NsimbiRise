@@ -1,0 +1,143 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and role information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "format": "email", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "phone": { "type": "string", "maxLength": 32 },
+        "kycVerified": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "createdAt"]
+    },
+    "Wallet": {
+      "title": "Wallet",
+      "description": "User wallet balances in UGX",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "balanceUgx": { "type": "number" },
+        "totalInvestedUgx": { "type": "number" },
+        "totalEarnedUgx": { "type": "number" },
+        "totalWithdrawnUgx": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "balanceUgx"]
+    },
+    "Deposit": {
+      "title": "Deposit",
+      "description": "Mobile Money deposit transactions",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "userEmail": { "type": "string", "maxLength": 256 },
+        "amountUgx": { "type": "number" },
+        "provider": { "type": "string", "enum": ["MTN", "Airtel"] },
+        "phoneNumber": { "type": "string", "maxLength": 32 },
+        "status": { "type": "string", "enum": ["pending", "completed", "failed"] },
+        "reference": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amountUgx", "provider", "phoneNumber", "status", "createdAt"]
+    },
+    "Investment": {
+      "title": "Investment",
+      "description": "Active and matured investment cycles",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "userEmail": { "type": "string", "maxLength": 256 },
+        "principalUgx": { "type": "number" },
+        "expectedReturnUgx": { "type": "number" },
+        "returnRate": { "type": "number" },
+        "maturityHours": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "matured", "withdrawn"] },
+        "startDate": { "type": "string", "format": "date-time" },
+        "maturityDate": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "principalUgx", "expectedReturnUgx", "status", "startDate", "maturityDate"]
+    },
+    "Withdrawal": {
+      "title": "Withdrawal",
+      "description": "Withdrawal requests with 10% transparent fee",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "userEmail": { "type": "string", "maxLength": 256 },
+        "amountUgx": { "type": "number" },
+        "feeUgx": { "type": "number" },
+        "netAmountUgx": { "type": "number" },
+        "provider": { "type": "string", "enum": ["MTN", "Airtel"] },
+        "phoneNumber": { "type": "string", "maxLength": 32 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "processed"] },
+        "reference": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amountUgx", "feeUgx", "netAmountUgx", "provider", "phoneNumber", "status", "createdAt"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable system and admin audit logs",
+      "type": "object",
+      "properties": {
+        "adminId": { "type": "string", "maxLength": 128 },
+        "adminEmail": { "type": "string", "maxLength": 256 },
+        "action": { "type": "string", "maxLength": 128 },
+        "targetId": { "type": "string", "maxLength": 128 },
+        "details": { "type": "string", "maxLength": 1024 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["adminId", "adminEmail", "action", "createdAt"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Authorized administrator whitelist",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email", "maxLength": 256 },
+        "role": { "type": "string", "enum": ["super_admin", "support_admin", "finance_admin"] },
+        "addedBy": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "User" },
+      "description": "User profile document"
+    },
+    "/wallets/{userId}": {
+      "schema": { "$ref": "Wallet" },
+      "description": "User wallet document"
+    },
+    "/deposits/{depositId}": {
+      "schema": { "$ref": "Deposit" },
+      "description": "User deposits collection"
+    },
+    "/investments/{investmentId}": {
+      "schema": { "$ref": "Investment" },
+      "description": "User investments collection"
+    },
+    "/withdrawals/{withdrawalId}": {
+      "schema": { "$ref": "Withdrawal" },
+      "description": "User withdrawals collection"
+    },
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "AuditLog" },
+      "description": "System audit logs collection"
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "Admin" },
+      "description": "Administrator whitelist collection"
+    }
+  }
+}
